@@ -1,6 +1,6 @@
 using BlazorApp1;
 using BlazorApp1.Components;
-using BlazorApp1.Data;
+using BlazorApp1.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 
@@ -10,8 +10,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddDbContext<MedicalImplantsContext>(options =>
+/*builder.Services.AddDbContext<MedicalImplantsContext>(options =>
        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+*/
+builder.Services.AddSingleton<IDataHandler<Client>>(sp =>
+    new FileDataHandler<Client>("clients.xml"));
+builder.Services.AddSingleton<IDataHandler<Implant>>(sp =>
+    new FileDataHandler<Implant>("implants.xml"));
+
+
 
 var app = builder.Build();
 
@@ -31,19 +38,6 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Seed data
-using (var scope = app.Services.CreateScope())
-{
-    var services = scope.ServiceProvider;
-    try
-    {
-        await DataSeeder.SeedData(services);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "An error occurred while seeding the database.");
-    }
-}
+
 
 app.Run();

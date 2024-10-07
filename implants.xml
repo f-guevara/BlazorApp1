@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfImplant xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Implant>
+    <Id>0</Id>
+    <Name>MINI-MICRO PLATE Straight Shape, 2 Holes</Name>
+    <Type>plate</Type>
+    <Price>6.75</Price>
+  </Implant>
+</ArrayOfImplant>
