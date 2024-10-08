@@ -1,0 +1,59 @@
+﻿@page "/order"
+@rendermode InteractiveServer
+@using BlazorApp1.Models
+@inject IDataHandler<Order> OrderDataHandler
+@inject IDataHandler<Implant> ImplantDataHandler
+@inject IDataHandler<Client> ClientDataHandler
+
+
+<h3>Place a New Order</h3>
+
+<EditForm Model="@newOrder" OnValidSubmit="@SubmitOrder">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div>
+        <label for="client">Client:</label>
+        <select @bind="newOrder.ClientId">
+            @foreach (var client in clients)
+            {
+                <option value="@client.Id">@client.Name</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label for="implant">Implant:</label>
+        <select @bind="newOrder.ImplantId">
+            @foreach (var implant in implants)
+            {
+                <option value="@implant.Id">@implant.Name</option>
+            }
+        </select>
+    </div>
+
+    <div>
+        <label>Order Date:</label>
+        <InputDate @bind-Value="newOrder.OrderDate" />
+    </div>
+
+    <button type="submit">Submit Order</button>
+</EditForm>
+
+@code {
+    private Order newOrder = new Order();
+    private List<Client> clients = new List<Client>();
+    private List<Implant> implants = new List<Implant>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        clients = await ClientDataHandler.LoadAsync(); // Load available clients
+        implants = await ImplantDataHandler.LoadAsync(); // Load available implants
+    }
+
+    private async Task SubmitOrder()
+    {
+        await OrderDataHandler.SaveAsync(newOrder);
+        newOrder = new Order(); // Reset form after saving
+    }
+}

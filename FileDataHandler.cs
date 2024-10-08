@@ -3,38 +3,43 @@ using System.IO;
 
 namespace BlazorApp1
 {
-    
 
-    public class FileDataHandler<T> : IDataHandler<T>
+
+    public class FileDataHandler<T> : IDataHandler<T> where T : class
     {
-        private readonly string filePath;
+        private readonly string _filePath;
 
-        public FileDataHandler(string path)
+        public FileDataHandler(string filePath)
         {
-            filePath = path;
+            _filePath = filePath;
         }
 
         public async Task<List<T>> LoadAsync()
         {
-            if (!File.Exists(filePath))
+            if (!File.Exists(_filePath))
             {
-                return new List<T>(); // Return empty list if file doesn't exist
+                return new List<T>();
             }
 
-            using var stream = new FileStream(filePath, FileMode.Open);
-            var serializer = new XmlSerializer(typeof(List<T>));
-            return (List<T>)serializer.Deserialize(stream);
+            var xmlData = await File.ReadAllTextAsync(_filePath);
+            if (string.IsNullOrWhiteSpace(xmlData))
+            {
+                return new List<T>();
+            }
+
+            // Deserialize XML to List<T> using XmlHelper
+            return XmlHelper.Deserialize<List<T>>(xmlData);
         }
 
         public async Task SaveAsync(T data)
         {
-            List<T> existingData = await LoadAsync(); // Load current data
-            existingData.Add(data); // Add the new data
+            var currentData = await LoadAsync();
+            currentData.Add(data);
 
-            using var stream = new FileStream(filePath, FileMode.Create);
-            var serializer = new XmlSerializer(typeof(List<T>));
-            serializer.Serialize(stream, existingData);
+            var xmlData = XmlHelper.Serialize(currentData);
+            await File.WriteAllTextAsync(_filePath, xmlData);
         }
     }
+
 
 }

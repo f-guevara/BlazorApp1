@@ -10,4 +10,14 @@
     <Name>Dea Liberati</Name>
     <Email>dea@d.com</Email>
   </Client>
+  <Client>
+    <Id>0</Id>
+    <Name>Luis Lopez</Name>
+    <Email>luis@d.com</Email>
+  </Client>
+  <Client>
+    <Id>0</Id>
+    <Name>Antonio Morales</Name>
+    <Email>antonio@d.com</Email>
+  </Client>
 </ArrayOfClient>
