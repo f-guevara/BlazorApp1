@@ -1,0 +1,195 @@
+﻿@page "/clients"
+@rendermode InteractiveServer
+@using BlazorApp1.Models
+@using BlazorApp1.Services
+@inject IClientService ClientService
+@inject IJSRuntime JSRuntime
+
+<h3>Clients</h3>
+
+<button class="btn btn-primary mb-3" @onclick="() => OpenClientDialog(null)">Add New Client</button>
+
+@if (clients == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Client ID</th>
+                <th>First Name</th>
+                <th>Last Name</th>
+                <th>Company</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var client in clients)
+            {
+                <tr>
+                    <td>@client.ClientId</td>
+                    <td>@client.FirstName</td>
+                    <td>@client.LastName</td>
+                    <td>@client.Company</td>
+                    <td>@client.Email</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenClientDialog(client)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteClient(client.ClientId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showDialog)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingClient.ClientId == 0 ? "Add New Client" : "Edit Client")</h5>
+                    <button type="button" class="close" @onclick="CloseDialog">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@editingClient" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="firstName">First Name:</label>
+                            <InputText id="firstName" @bind-Value="editingClient.FirstName" class="form-control" />
+                            <ValidationMessage For="@(() => editingClient.FirstName)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="lastName">Last Name:</label>
+                            <InputText id="lastName" @bind-Value="editingClient.LastName" class="form-control" />
+                            <ValidationMessage For="@(() => editingClient.LastName)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="company">Company:</label>
+                            <InputText id="company" @bind-Value="editingClient.Company" class="form-control" />
+                            <ValidationMessage For="@(() => editingClient.Company)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <InputText id="email" @bind-Value="editingClient.Email" class="form-control" />
+                            <ValidationMessage For="@(() => editingClient.Email)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CloseDialog">Cancel</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<Client> clients;
+    private bool showDialog = false;
+    private Client editingClient = new Client();
+
+    protected override void OnInitialized()
+    {
+        LoadClients();
+    }
+
+    private void LoadClients()
+    {
+        clients = ClientService.GetAllClients();
+    }
+
+    private void OpenClientDialog(Client client)
+    {
+        editingClient = client != null ? new Client
+            {
+                ClientId = client.ClientId,
+                FirstName = client.FirstName,
+                LastName = client.LastName,
+                Company = client.Company,
+                Email = client.Email
+            } : new Client();
+        showDialog = true;
+    }
+
+    private void CloseDialog()
+    {
+        showDialog = false;
+        editingClient = new Client();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        try
+        {
+            if (editingClient.ClientId == 0)
+            {
+                await Task.Run(() => ClientService.AddClient(editingClient));
+                await JSRuntime.InvokeVoidAsync("alert", "Client added successfully.");
+            }
+            else
+            {
+                await Task.Run(() => ClientService.UpdateClient(editingClient));
+                await JSRuntime.InvokeVoidAsync("alert", "Client updated successfully.");
+            }
+
+            CloseDialog();
+            await InvokeAsync(StateHasChanged);
+            LoadClients();
+        }
+        catch (Exception ex)
+        {
+            await HandleError(ex);
+        }
+    }
+
+    private async Task HandleError(Exception ex)
+    {
+        Console.Error.WriteLine(ex);
+        await JSRuntime.InvokeVoidAsync("alert", $"An error occurred: {ex.Message}");
+    }
+
+    private async Task DeleteClient(int clientId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this client?");
+        if (confirmed)
+        {
+            try
+            {
+                ClientService.DeleteClient(clientId);
+                LoadClients();
+                await JSRuntime.InvokeVoidAsync("alert", "Client deleted successfully.");
+            }
+            catch (Exception ex)
+            {
+                await HandleError(ex);
+            }
+        }
+    }
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+        opacity: 0.5;
+    }
+
+    .modal {
+        z-index: 1050;
+    }
+</style>

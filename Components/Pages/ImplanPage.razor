@@ -1,0 +1,193 @@
+﻿@page "/implants"
+@rendermode InteractiveServer
+@using BlazorApp1.Models
+@using BlazorApp1.Services
+@inject IImplantService ImplantService
+@inject IJSRuntime JSRuntime
+
+<h3>Implants</h3>
+
+<button class="btn btn-primary mb-3" @onclick="() => OpenImplantDialog(null)">Add New Implant</button>
+
+@if (implants == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Implant ID</th>
+                <th>MCM ID</th>
+                <th>Name</th>
+                <th>System</th>
+                <th>Type</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var implant in implants)
+            {
+                <tr>
+                    <td>@implant.ImplantId</td>
+                    <td>@implant.McmId</td>
+                    <td>@implant.Name</td>
+                    <td>@implant.System</td>
+                    <td>@implant.Type</td>
+                    <td>@implant.Price.ToString("C")</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenImplantDialog(implant)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteImplant(implant.ImplantId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showDialog)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingImplant.ImplantId == 0 ? "Add New Implant" : "Edit Implant")</h5>
+                    <button type="button" class="close" @onclick="CloseDialog">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@editingImplant" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="mcmId">MCM ID:</label>
+                            <InputText id="mcmId" @bind-Value="editingImplant.McmId" class="form-control" />
+                            <ValidationMessage For="@(() => editingImplant.McmId)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="name">Name:</label>
+                            <InputText id="name" @bind-Value="editingImplant.Name" class="form-control" />
+                            <ValidationMessage For="@(() => editingImplant.Name)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="system">System:</label>
+                            <InputSelect id="system" @bind-Value="editingImplant.System" class="form-control">
+                                @foreach (var system in Enum.GetValues(typeof(ImplantSystem)))
+                                {
+                                    <option value="@system">@system</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => editingImplant.System)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="type">Type:</label>
+                            <InputSelect id="type" @bind-Value="editingImplant.Type" class="form-control">
+                                @foreach (var type in Enum.GetValues(typeof(ImplantType)))
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => editingImplant.Type)" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="price">Price:</label>
+                            <InputNumber id="price" @bind-Value="editingImplant.Price" class="form-control" />
+                            <ValidationMessage For="@(() => editingImplant.Price)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CloseDialog">Cancel</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<Implant> implants;
+    private bool showDialog = false;
+    private Implant editingImplant = new Implant();
+
+    protected override void OnInitialized()
+    {
+        LoadImplants();
+    }
+
+    private void LoadImplants()
+    {
+        implants = ImplantService.GetAllImplants();
+    }
+
+    private void OpenImplantDialog(Implant implant)
+    {
+        editingImplant = implant != null ? new Implant
+            {
+                ImplantId = implant.ImplantId,
+                McmId = implant.McmId,
+                Name = implant.Name,
+                System = implant.System,
+                Type = implant.Type,
+                Price = implant.Price
+            } : new Implant();
+        showDialog = true;
+    }
+
+    private void CloseDialog()
+    {
+        showDialog = false;
+        editingImplant = new Implant();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (editingImplant.ImplantId == 0)
+        {
+            ImplantService.AddImplant(editingImplant);
+            await JSRuntime.InvokeVoidAsync("alert", "Implant added successfully.");
+        }
+        else
+        {
+            ImplantService.UpdateImplant(editingImplant);
+            await JSRuntime.InvokeVoidAsync("alert", "Implant updated successfully.");
+        }
+
+        CloseDialog();
+        LoadImplants();
+    }
+
+    private async Task DeleteImplant(int implantId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this implant?");
+        if (confirmed)
+        {
+            ImplantService.DeleteImplant(implantId);
+            LoadImplants();
+            await JSRuntime.InvokeVoidAsync("alert", "Implant deleted successfully.");
+        }
+    }
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+        opacity: 0.5;
+    }
+
+    .modal {
+        z-index: 1050;
+    }
+</style>
