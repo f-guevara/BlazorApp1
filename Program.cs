@@ -17,9 +17,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddScoped<IClientService, ClientService>();
 builder.Services.AddScoped<IImplantService, ImplantService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
-
-
-
+builder.Services.AddScoped<DataSeeder>();
 
 
 var app = builder.Build();
@@ -41,7 +39,12 @@ app.UseAntiforgery();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var dataSeeder = services.GetRequiredService<DataSeeder>();
+    dataSeeder.SeedData();
+}
 
 
 

@@ -1,0 +1,221 @@
+﻿@page "/orders"
+@rendermode InteractiveServer
+@using BlazorApp1.Models
+@using BlazorApp1.Services
+@inject IOrderService OrderService
+@inject IClientService ClientService
+@inject IImplantService ImplantService
+@inject IJSRuntime JSRuntime
+
+<h3>Orders</h3>
+
+<button class="btn btn-primary mb-3" @onclick="() => OpenOrderDialog(null)">Add New Order</button>
+
+@if (orders == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Client</th>
+                <th>Order Date</th>
+                <th>Total Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in orders)
+            {
+                <tr>
+                    <td>@order.OrderId</td>
+                    <td>@GetClientName(order.ClientId)</td>
+                    <td>@order.OrderDate.ToShortDateString()</td>
+                    <td>@GetOrderTotal(order).ToString("C")</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenOrderDialog(order)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteOrder(order.OrderId)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (showDialog)
+{
+    <div class="modal" tabindex="-1" style="display:block" role="dialog">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingOrder.OrderId == 0 ? "Add New Order" : "Edit Order")</h5>
+                    <button type="button" class="close" @onclick="CloseDialog">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@editingOrder" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <div class="form-group">
+                            <label for="clientId">Client:</label>
+                            <InputSelect id="clientId" @bind-Value="editingOrder.ClientId" class="form-control">
+                                @foreach (var client in clients)
+                                {
+                                    <option value="@client.ClientId">@($"{client.FirstName} {client.LastName}")</option>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => editingOrder.ClientId)" />
+                        </div>
+
+                        <h5>Order Items</h5>
+                        @foreach (var item in editingOrder.OrderItems)
+                        {
+                            <div class="form-row mb-2">
+                                <div class="col">
+                                    <InputSelect @bind-Value="item.ImplantId" class="form-control">
+                                        @foreach (var implant in implants)
+                                        {
+                                            <option value="@implant.ImplantId">@implant.Name</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                                <div class="col">
+                                    <InputNumber @bind-Value="item.Quantity" class="form-control" />
+                                </div>
+                                <div class="col">
+                                    <button type="button" class="btn btn-danger" @onclick="() => RemoveOrderItem(item)">Remove</button>
+                                </div>
+                            </div>
+                        }
+                        <button type="button" class="btn btn-secondary mb-3" @onclick="AddOrderItem">Add Item</button>
+
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CloseDialog">Cancel</button>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<Order> orders;
+    private List<Client> clients;
+    private List<Implant> implants;
+    private bool showDialog = false;
+    private Order editingOrder = new Order();
+
+    protected override void OnInitialized()
+    {
+        LoadOrders();
+        LoadClients();
+        LoadImplants();
+    }
+
+    private void LoadOrders()
+    {
+        orders = OrderService.GetAllOrders();
+    }
+
+    private void LoadClients()
+    {
+        clients = ClientService.GetAllClients();
+    }
+
+    private void LoadImplants()
+    {
+        implants = ImplantService.GetAllImplants();
+    }
+
+    private string GetClientName(int clientId)
+    {
+        var client = clients.FirstOrDefault(c => c.ClientId == clientId);
+        return client != null ? $"{client.FirstName} {client.LastName}" : "Unknown";
+    }
+
+    private decimal GetOrderTotal(Order order)
+    {
+        return order.OrderItems.Sum(item => 
+        {
+            var implant = implants.FirstOrDefault(i => i.ImplantId == item.ImplantId);
+            return implant != null ? implant.Price * item.Quantity : 0;
+        });
+    }
+
+    private void OpenOrderDialog(Order order)
+    {
+        editingOrder = order != null ? new Order
+        {
+            OrderId = order.OrderId,
+            ClientId = order.ClientId,
+            OrderDate = order.OrderDate,
+            OrderItems = new List<OrderItem>(order.OrderItems)
+        } : new Order { OrderDate = DateTime.Now, OrderItems = new List<OrderItem>() };
+        showDialog = true;
+    }
+
+    private void CloseDialog()
+    {
+        showDialog = false;
+        editingOrder = new Order();
+    }
+
+    private void AddOrderItem()
+    {
+        editingOrder.OrderItems.Add(new OrderItem());
+    }
+
+    private void RemoveOrderItem(OrderItem item)
+    {
+        editingOrder.OrderItems.Remove(item);
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (editingOrder.OrderId == 0)
+        {
+            OrderService.AddOrder(editingOrder);
+            await JSRuntime.InvokeVoidAsync("alert", "Order added successfully.");
+        }
+        else
+        {
+            OrderService.UpdateOrder(editingOrder);
+            await JSRuntime.InvokeVoidAsync("alert", "Order updated successfully.");
+        }
+
+        CloseDialog();
+        LoadOrders();
+    }
+
+    private async Task DeleteOrder(int orderId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this order?");
+        if (confirmed)
+        {
+            OrderService.DeleteOrder(orderId);
+            LoadOrders();
+            await JSRuntime.InvokeVoidAsync("alert", "Order deleted successfully.");
+        }
+    }
+}
+
+<style>
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+        opacity: 0.5;
+    }
+
+    .modal {
+        z-
+    }
+ </style>
