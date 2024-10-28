@@ -31,7 +31,7 @@ else
             @foreach (var implant in implants)
             {
                 <tr>
-                    <td>@implant.ImplantId</td>
+                    <td>@implant.Id</td>
                     <td>@implant.McmId</td>
                     <td>@implant.Name</td>
                     <td>@implant.System</td>
@@ -39,7 +39,7 @@ else
                     <td>@implant.Price.ToString("C")</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenImplantDialog(implant)">Edit</button>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteImplant(implant.ImplantId)">Delete</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteImplant(implant.Id)">Delete</button>
                     </td>
                 </tr>
             }
@@ -53,7 +53,7 @@ else
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(editingImplant.ImplantId == 0 ? "Add New Implant" : "Edit Implant")</h5>
+                    <h5 class="modal-title">@(editingImplant.Id == 0 ? "Add New Implant" : "Edit Implant")</h5>
                     <button type="button" class="close" @onclick="CloseDialog">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -130,7 +130,7 @@ else
     {
         editingImplant = implant != null ? new Implant
             {
-                ImplantId = implant.ImplantId,
+                Id = implant.Id,
                 McmId = implant.McmId,
                 Name = implant.Name,
                 System = implant.System,
@@ -148,7 +148,7 @@ else
 
     private async Task HandleValidSubmit()
     {
-        if (editingImplant.ImplantId == 0)
+        if (editingImplant.Id == 0)
         {
             ImplantService.AddImplant(editingImplant);
             await JSRuntime.InvokeVoidAsync("alert", "Implant added successfully.");

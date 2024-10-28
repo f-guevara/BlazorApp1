@@ -9,5 +9,6 @@ namespace BlazorApp1.Services
         void AddOrder(Order order);
         void UpdateOrder(Order order);
         void DeleteOrder(int orderId);
+        decimal GetOrderTotal(Order order);
     }
 }

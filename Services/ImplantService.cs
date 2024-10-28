@@ -18,7 +18,7 @@ public class ImplantService : IImplantService
     public void AddImplant(Implant implant)
     {
         var implants = GetAllImplants();
-        implant.ImplantId = implants.Count == 0 ? 1 : implants.Max(i => i.ImplantId) + 1;
+        implant.Id = implants.Count == 0 ? 1 : implants.Max(i => i.Id) + 1;
         implants.Add(implant);
         SaveImplants(implants);
     }
@@ -26,7 +26,7 @@ public class ImplantService : IImplantService
     public void UpdateImplant(Implant implant)
     {
         var implants = GetAllImplants();
-        var existingImplant = implants.FirstOrDefault(i => i.ImplantId == implant.ImplantId);
+        var existingImplant = implants.FirstOrDefault(i => i.Id == implant.Id);
         if (existingImplant != null)
         {
             existingImplant.McmId = implant.McmId;
@@ -41,7 +41,7 @@ public class ImplantService : IImplantService
     public void DeleteImplant(int implantId)
     {
         var implants = GetAllImplants();
-        implants.RemoveAll(i => i.ImplantId == implantId);
+        implants.RemoveAll(i => i.Id == implantId);
         SaveImplants(implants);
     }
 

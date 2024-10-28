@@ -47,7 +47,7 @@ namespace BlazorApp1
 
                 _clientService.AddClient(new Client
                 {
-                    ClientId = 2,
+                    Id = 2,
                     FirstName = "Maria",
                     LastName = "Garcia",
                     Company = "HealthCorp",
@@ -66,7 +66,7 @@ namespace BlazorApp1
                 });
                 _clientService.AddClient(new Client
                 {
-                    ClientId = 3,
+                    Id = 3,
                     FirstName = "Hans",
                     LastName = "Schmidt",
                     Company = "MedEquip GmbH",
@@ -85,7 +85,7 @@ namespace BlazorApp1
                 });
                 _clientService.AddClient(new Client
                 {
-                    ClientId = 4,
+                    Id = 4,
                     FirstName = "Akira",
                     LastName = "Tanaka",
                     Company = "Surgical Japan",

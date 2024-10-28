@@ -2,6 +2,8 @@
 {
     public enum ImplantType
     {
+        screw,
+        plate,
         Instrument,
         Rack,
         Tray,

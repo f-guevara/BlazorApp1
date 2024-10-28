@@ -4,7 +4,7 @@ namespace BlazorApp1.Models
 {
     public class Client
     {
-        public int ClientId { get; set; } = 0;
+        public int Id { get; set; } = 0;
         public string FirstName { get; set; } = string.Empty;
         public string MiddleName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;

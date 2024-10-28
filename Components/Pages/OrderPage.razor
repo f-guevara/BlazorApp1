@@ -31,13 +31,13 @@ else
             @foreach (var order in orders)
             {
                 <tr>
-                    <td>@order.OrderId</td>
+                    <td>@order.Id</td>
                     <td>@GetClientName(order.ClientId)</td>
                     <td>@order.OrderDate.ToShortDateString()</td>
-                    <td>@GetOrderTotal(order).ToString("C")</td>
+                    <td>@OrderService.GetOrderTotal(order).ToString("C")</td>
                     <td>
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenOrderDialog(order)">Edit</button>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteOrder(order.OrderId)">Delete</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteOrder(order.Id)">Delete</button>
                     </td>
                 </tr>
             }
@@ -51,7 +51,7 @@ else
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">@(editingOrder.OrderId == 0 ? "Add New Order" : "Edit Order")</h5>
+                    <h5 class="modal-title">@(editingOrder.Id == 0 ? "Add New Order" : "Edit Order")</h5>
                     <button type="button" class="close" @onclick="CloseDialog">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -64,7 +64,7 @@ else
                             <InputSelect id="clientId" @bind-Value="editingOrder.ClientId" class="form-control">
                                 @foreach (var client in clients)
                                 {
-                                    <option value="@client.ClientId">@($"{client.FirstName} {client.LastName}")</option>
+                                    <option value="@client.Id">@($"{client.FirstName} {client.LastName}")</option>
                                 }
                             </InputSelect>
                             <ValidationMessage For="@(() => editingOrder.ClientId)" />
@@ -78,7 +78,7 @@ else
                                     <InputSelect @bind-Value="item.ImplantId" class="form-control">
                                         @foreach (var implant in implants)
                                         {
-                                            <option value="@implant.ImplantId">@implant.Name</option>
+                                            <option value="@implant.Id">@implant.Name</option>
                                         }
                                     </InputSelect>
                                 </div>
@@ -133,24 +133,16 @@ else
 
     private string GetClientName(int clientId)
     {
-        var client = clients.FirstOrDefault(c => c.ClientId == clientId);
+        var client = clients.FirstOrDefault(c => c.Id == clientId);
         return client != null ? $"{client.FirstName} {client.LastName}" : "Unknown";
     }
 
-    private decimal GetOrderTotal(Order order)
-    {
-        return order.OrderItems.Sum(item => 
-        {
-            var implant = implants.FirstOrDefault(i => i.ImplantId == item.ImplantId);
-            return implant != null ? implant.Price * item.Quantity : 0;
-        });
-    }
-
+    
     private void OpenOrderDialog(Order order)
     {
         editingOrder = order != null ? new Order
         {
-            OrderId = order.OrderId,
+            Id = order.Id,
             ClientId = order.ClientId,
             OrderDate = order.OrderDate,
             OrderItems = new List<OrderItem>(order.OrderItems)
@@ -176,7 +168,7 @@ else
 
     private async Task HandleValidSubmit()
     {
-        if (editingOrder.OrderId == 0)
+        if (editingOrder.Id == 0)
         {
             OrderService.AddOrder(editingOrder);
             await JSRuntime.InvokeVoidAsync("alert", "Order added successfully.");

@@ -18,7 +18,7 @@ public class ClientService : IClientService
     public void AddClient(Client client)
     {
         var clients = GetAllClients();
-        client.ClientId = clients.Count == 0 ? 1 : clients.Max(c => c.ClientId) + 1;
+        client.Id = clients.Count == 0 ? 1 : clients.Max(c => c.Id) + 1;
         clients.Add(client);
         SaveClients(clients);
     }
@@ -26,7 +26,7 @@ public class ClientService : IClientService
     public void UpdateClient(Client client)
     {
         var clients = GetAllClients();
-        var existingClient = clients.FirstOrDefault(c => c.ClientId == client.ClientId);
+        var existingClient = clients.FirstOrDefault(c => c.Id == client.Id);
         if (existingClient != null)
         {
             existingClient.FirstName = client.FirstName;
@@ -43,7 +43,7 @@ public class ClientService : IClientService
     public void DeleteClient(int clientId)
     {
         var clients = GetAllClients();
-        clients.RemoveAll(c => c.ClientId == clientId);
+        clients.RemoveAll(c => c.Id == clientId);
         SaveClients(clients);
     }
 
